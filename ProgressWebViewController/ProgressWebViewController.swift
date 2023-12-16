@@ -31,7 +31,7 @@ let cookieKey = "Cookie"
 open class ProgressWebViewController: UIViewController {
     
     @available(*, unavailable, renamed: "defaultURL")
-    open var url: URL?
+    open var url: URL? { return defaultURL }
     
     open var defaultURL: URL?
     open var bypassedSSLHosts: [String]?
@@ -46,7 +46,7 @@ open class ProgressWebViewController: UIViewController {
         ] as [String : Any]
     
     @available(iOS, obsoleted: 1.12.0, renamed: "defaultCookies")
-    open var cookies: [HTTPCookie]?
+    open var cookies: [HTTPCookie]? { return defaultCookies }
     
     open var defaultCookies: [HTTPCookie]? {
         didSet {
@@ -61,7 +61,7 @@ open class ProgressWebViewController: UIViewController {
     }
     
     @available(iOS, obsoleted: 1.12.0, renamed: "defaultHeaders")
-    open var headers: [String: String]?
+    open var headers: [String: String]? { return defaultHeaders }
     
     open var defaultHeaders: [String: String]? {
         didSet {
@@ -311,7 +311,12 @@ open class ProgressWebViewController: UIViewController {
     }
     
     override open func targetViewController(forAction action: Selector, sender: Any?) -> UIViewController? {
-        return currentNavigationController
+        switch navigationWay {
+        case .browser:
+            return currentNavigationController
+        case .push(let targetViewController):
+            return targetViewController ?? currentNavigationController
+        }
     }
 }
 
@@ -780,7 +785,7 @@ extension ProgressWebViewController: WKNavigationDelegate {
                     return
                 }
             }
-            if navigationWay == .push {
+            if case .push = navigationWay {
                 pushWebViewController(defaultURL: url)
                 actionPolicy = .cancel
                 return
@@ -807,7 +812,7 @@ extension ProgressWebViewController: WKNavigationDelegate {
             responsePolicy = result ? .allow : .cancel
         }
         
-        if navigationWay == .push, responsePolicy == .cancel, let webViewController = currentNavigationController?.topViewController as? ProgressWebViewController, webViewController.currentURL?.appendingPathComponent("") == url.appendingPathComponent("") {
+        if case .push = navigationWay, responsePolicy == .cancel, let webViewController = currentNavigationController?.topViewController as? ProgressWebViewController, webViewController.currentURL?.appendingPathComponent("") == url.appendingPathComponent("") {
             currentNavigationController?.popViewController(animated: true)
         }
     }
